@@ -1,24 +1,27 @@
 /*
  * 6PACK - file compressor using FastLZ (lightning-fast compression library)
- * Copyright (C) 2007-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Copyright (c) 2007-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
+ * Copyright (c) 2023 Jeffrey H. Johnson <trnsz@pobox.com>
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ *  * The above copyright notice and this permission notice shall be
+ *    included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  */
 
 #include <stdio.h>
@@ -38,30 +41,34 @@
 # define PATH_SEPARATOR  '\\'
 #endif /* if defined( MSDOS ) || defined( __MSDOS__ ) || defined( MSDOS ) */
 
-#if defined( WIN32 ) || defined( __NT__ ) || defined( _WIN32 ) || defined( __WIN32__ )
+#if defined( WIN32 )  || defined( __NT__ ) \
+ || defined( _WIN32 ) || defined( __WIN32__ )
 # define PATH_SEPARATOR  '\\'
-#endif /* if defined( WIN32 ) || defined( __NT__ ) || defined( _WIN32 ) || defined( __WIN32__ ) */
+#endif /* if defined( WIN32 )  || defined( __NT__ )
+	  || defined( _WIN32 ) || defined( __WIN32__ ) */
 
 #ifndef PATH_SEPARATOR
 # define PATH_SEPARATOR  '/'
 #endif /* ifndef PATH_SEPARATOR */
 
 #undef SIXPACK_BENCHMARK_WIN32
-#if defined( WIN32 ) || defined( __NT__ ) || defined( _WIN32 ) || defined( __WIN32__ )
+#if defined( WIN32 )  || defined( __NT__ ) \
+ || defined( _WIN32 ) || defined( __WIN32__ )
 # if defined( _MSC_VER ) || defined( __GNUC__ )
 #  define SIXPACK_BENCHMARK_WIN32
 #  include <windows.h>
 # endif /* if defined( _MSC_VER ) || defined( __GNUC__ ) */
-#endif /* if defined( WIN32 ) || defined( __NT__ ) || defined( _WIN32 ) || defined( __WIN32__ ) */
+#endif /* if defined( WIN32 )  || defined( __NT__ )
+	  || defined( _WIN32 ) || defined( __WIN32__ ) */
 
-/* magic identifier for 6pack file */
+/* Magic identifier for 6pack file */
 static unsigned char sixpack_magic[8] = {
   137, '6', 'P', 'K', 13, 10, 26, 10
 };
 
 #define BLOCK_SIZE  ( 2 * 64 * 1024 )
 
-/* prototypes */
+/* Prototypes */
 static unsigned long update_adler32(unsigned long checksum, const void *buf,
                                     int len);
 void usage(void);
@@ -76,7 +83,7 @@ int pack_file_compressed(const char *input_file, int method, int level,
 int pack_file(int compress_level, const char *input_file,
               const char *output_file);
 
-/* for Adler-32 checksum algorithm, see RFC 1950 Section 8.2 */
+/* Adler-32 checksum algorithm; see RFC-1950, Section 8.2 */
 #define ADLER32_BASE  65521
 static unsigned long
 update_adler32(unsigned long checksum, const void *buf, int len)
@@ -140,8 +147,11 @@ usage(void)
   printf("\n");
 }
 
-/* return non-zero if magic sequence is detected */
-/* warning: reset the read pointer to the beginning of the file */
+/*
+ * Return non-zero if magic sequence is detected.
+ * Warning: Reset the read pointer to the beginning of the file
+ */
+
 int
 detect_magic(FILE *f)
 {
@@ -208,7 +218,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
   unsigned long  checksum;
   const char *   shown_name;
   unsigned char  buffer[BLOCK_SIZE];
-  unsigned char  result[BLOCK_SIZE * 2]; /* FIXME twice is too large */
+  unsigned char  result[BLOCK_SIZE * 2]; /* FIXME: Twice is too large */
   unsigned char  progress[20];
   int            c;
   unsigned long  percent;
@@ -216,7 +226,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
   unsigned long  total_compressed;
   int            chunk_size;
 
-  /* sanity check */
+  /* Sanity check */
   in = fopen(input_file, "rb");
   if (!in)
     {
@@ -224,12 +234,12 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
       return -1;
     }
 
-  /* find size of the file */
+  /* Find size of the file */
   fseek(in, 0, SEEK_END);
   fsize = ftell(in);
   fseek(in, 0, SEEK_SET);
 
-  /* already a 6pack archive? */
+  /* Already a 6pack archive? */
   if (detect_magic(in))
     {
       printf("Error: file %s is already a 6pack archive!\n", input_file);
@@ -237,7 +247,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
       return -1;
     }
 
-  /* truncate directory prefix, e.g. "foo/bar/FILE.txt" becomes "FILE.txt" */
+  /* Truncate directory prefix, e.g. "foo/bar/FILE.txt" becomes "FILE.txt" */
   shown_name = input_file + strlen(input_file) - 1;
   while (shown_name > input_file)
     {
@@ -251,7 +261,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
         }
     }
 
-  /* chunk for File Entry */
+  /* Chunk for File Entry */
   buffer[0]    = fsize & 255;
   buffer[1]    = ( fsize >> 8 ) & 255;
   buffer[2]    = ( fsize >> 16 ) & 255;
@@ -262,7 +272,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
     buffer[6]  = ( fsize >> 48 ) & 255;
     buffer[7]  = ( fsize >> 56 ) & 255;
 #else  /* if 0 */
-    /* because fsize is only 32-bit */
+    /* ... because fsize is only 32-bit */
     buffer[4]  = 0;
     buffer[5]  = 0;
     buffer[6]  = 0;
@@ -278,7 +288,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
   fwrite(shown_name, strlen(shown_name) + 1, 1, f);
   total_compressed = 16 + 10 + strlen(shown_name) + 1;
 
-  /* for progress status */
+  /* For progress status */
   memset(progress, ' ', 20);
   if (strlen(shown_name) < 16)
     {
@@ -310,7 +320,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
   printf("]\r");
   printf("%s", progress);
 
-  /* read file and place in archive */
+  /* Read file and place in archive */
   total_read  = 0;
   percent     = 0;
   for (;;)
@@ -325,7 +335,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
 
       total_read += bytes_read;
 
-      /* for progress */
+      /* For progress */
       if (fsize < ( 1 << 24 ))
         {
           percent = total_read * 100 / fsize;
@@ -342,13 +352,13 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
           last_percent++;
         }
 
-      /* too small, don't bother to compress */
+      /* Too small, don't bother to compress */
       if (bytes_read < 32)
         {
           compress_method = 0;
         }
 
-      /* write to output */
+      /* Write to output */
       switch (compress_method)
         {
         /* FastLZ */
@@ -362,7 +372,7 @@ pack_file_compressed(const char *input_file, int method, int level, FILE *f)
           total_compressed  += chunk_size;
           break;
 
-        /* uncompressed, also fallback method */
+        /* Uncompressed, also fallback method */
         case 0:
         default:
           checksum  = 1L;
@@ -470,7 +480,7 @@ pack_file(int compress_level, const char *input_file, const char *output_file)
         return -1;
       }
 
-    /* truncate directory prefix, e.g. "foo/bar/FILE.txt" becomes "FILE.txt" */
+    /* Truncate directory prefix, e.g. "foo/bar/FILE.txt" becomes "FILE.txt" */
     shown_name = input_file + strlen(input_file) - 1;
     while (shown_name > input_file)
       {
@@ -609,20 +619,20 @@ main(int argc, char **argv)
   char * input_file;
   char * output_file;
 
-  /* show help with no argument at all*/
+  /* Show help with no argument at all*/
   if (argc == 1)
     {
       usage();
       return 0;
     }
 
-  /* default compression level, not the fastest */
+  /* Default compression level, not the fastest */
   compress_level = 2;
 
-  /* do benchmark only when explicitly specified */
+  /* Do benchmark only when explicitly specified */
   benchmark = 0;
 
-  /* no file is specified */
+  /* No file is specified */
   input_file   = 0;
   output_file  = 0;
 
@@ -635,14 +645,14 @@ main(int argc, char **argv)
           continue;
         }
 
-      /* display help on usage */
+      /* Display help on usage */
       if (!strcmp(argument, "-h") || !strcmp(argument, "--help"))
         {
           usage();
           return 0;
         }
 
-      /* check for version information */
+      /* Check for version information */
       if (!strcmp(argument, "-v") || !strcmp(argument, "--version"))
         {
           printf("6pack: high-speed file compression tool\n");
@@ -655,14 +665,14 @@ main(int argc, char **argv)
           return 0;
         }
 
-      /* test compression speed? */
+      /* Test compression speed? */
       if (!strcmp(argument, "-mem"))
         {
           benchmark = 1;
           continue;
         }
 
-      /* compression level */
+      /* Compression level */
       if (!strcmp(argument, "-1") || !strcmp(argument, "--fastest"))
         {
           compress_level = 1;
@@ -675,7 +685,7 @@ main(int argc, char **argv)
           continue;
         }
 
-      /* unknown option */
+      /* Unknown option */
       if (argument[0] == '-')
         {
           printf("Error: unknown option %s\n\n", argument);
@@ -684,21 +694,21 @@ main(int argc, char **argv)
           return -1;
         }
 
-      /* first specified file is input */
+      /* First specified file is input */
       if (!input_file)
         {
           input_file = argument;
           continue;
         }
 
-      /* next specified file is output */
+      /* Next specified file is output */
       if (!output_file)
         {
           output_file = argument;
           continue;
         }
 
-      /* files are already specified */
+      /* Files are already specified */
       printf("Error: unknown option %s\n\n", argument);
       printf("To get help on usage:\n");
       printf("  6pack --help\n\n");

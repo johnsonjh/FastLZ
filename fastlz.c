@@ -1,24 +1,27 @@
 /*
  * FastLZ - Byte-aligned LZ77 compression library
- * Copyright (C) 2005-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Copyright (c) 2005-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
+ * Copyright (c) 2023 Jeffrey H. Johnson <trnsz@pobox.com>
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ *  * The above copyright notice and this permission notice shall be
+ *    included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  */
 
 #include "fastlz.h"
@@ -29,55 +32,56 @@
  * Always check for bound when decompressing.
  * Generally it is best to leave it defined.
  */
+
 #define FASTLZ_SAFE
 #if defined( FASTLZ_USE_SAFE_DECOMPRESSOR ) \
   && ( FASTLZ_USE_SAFE_DECOMPRESSOR == 0 )
 # undef FASTLZ_SAFE
-#endif /* if defined( FASTLZ_USE_SAFE_DECOMPRESSOR ) && ( FASTLZ_USE_SAFE_DECOMPRESSOR == 0 ) */
+#endif /* if defined( FASTLZ_USE_SAFE_DECOMPRESSOR )
+	   && ( FASTLZ_USE_SAFE_DECOMPRESSOR == 0 ) */
 
 /*
  * Give hints to the compiler for branch prediction optimization.
  */
-#if defined( __clang__ ) || ( defined( __GNUC__ ) && ( __GNUC__ > 2 ))
+
+#if defined( __clang__ ) \
+  || ( defined( __GNUC__ ) && ( __GNUC__ > 2 ))
 # define FASTLZ_LIKELY(c)     ( __builtin_expect(!!( c ), 1))
 # define FASTLZ_UNLIKELY(c)   ( __builtin_expect(!!( c ), 0))
-#else  /* if defined( __clang__ ) || ( defined( __GNUC__ ) && ( __GNUC__ > 2 )) */
+#else
 # define FASTLZ_LIKELY(c)     ( c )
 # define FASTLZ_UNLIKELY(c)   ( c )
-#endif /* if defined( __clang__ ) || ( defined( __GNUC__ ) && ( __GNUC__ > 2 )) */
+#endif /* if defined( __clang__ )
+	   || ( defined( __GNUC__ ) && ( __GNUC__ > 2 )) */
 
 /*
  * Specialize custom 64-bit implementation for speed improvements.
  */
-#if defined( __x86_64__ ) || defined( _M_X64 ) || defined( __aarch64__ ) \
-  || defined( _M_ARM64 )
+
+#if defined( __x86_64__ )  || defined( _M_X64 ) \
+ || defined( __aarch64__ ) || defined( _M_ARM64 )
 # define FLZ_ARCH64
-#endif /* if defined( __x86_64__ ) || defined( _M_X64 ) || defined( __aarch64__ ) || defined( _M_ARM64 ) */
+#endif /* if defined( __x86_64__ ) || defined( _M_X64 )
+	  || defined( __aarch64__ ) || defined( _M_ARM64 ) */
 
 #if defined( FASTLZ_SAFE )
 # define FASTLZ_BOUND_CHECK_OOB(cond) \
-  if (FASTLZ_UNLIKELY(!( cond )))    \
+  if (FASTLZ_UNLIKELY(!( cond )))     \
   return FASTLZ_ERROR_TOO_SMALL;
 
 #else  /* if defined( FASTLZ_SAFE ) */
 # define FASTLZ_BOUND_CHECK_OOB(cond) \
-  do                                 \
-    {                                \
-    }                                \
-  while (0)
+  do { } while (0)
 #endif /* if defined( FASTLZ_SAFE ) */
 
 #if defined( FASTLZ_SAFE )
 # define FASTLZ_BOUND_CHECK_CORRUPT(cond) \
-  if (FASTLZ_UNLIKELY(!( cond )))        \
+  if (FASTLZ_UNLIKELY(!( cond )))         \
   return FASTLZ_ERROR_CORRUPT;
 
 #else  /* if defined( FASTLZ_SAFE ) */
 # define FASTLZ_BOUND_CHECK_CORRUPT(cond) \
-  do                                     \
-    {                                    \
-    }                                    \
-  while (0)
+  do { } while (0)
 #endif /* if defined( FASTLZ_SAFE ) */
 
 #if defined( FASTLZ_USE_MEMMOVE ) && ( FASTLZ_USE_MEMMOVE == 0 )
@@ -280,7 +284,7 @@
 #endif /* !FLZ_ARCH64 */
 
 #define MAX_COPY          32
-#define MAX_LEN           264 /* 256 + 8 */
+#define MAX_LEN           264  /* 256 + 8 */
 #define MAX_L1_DISTANCE   8192
 #define MAX_L2_DISTANCE   8191
 #define MAX_FARDISTANCE   ( 65535 + MAX_L2_DISTANCE - 1 )
@@ -318,7 +322,7 @@ flz_literals(uint32_t runs, const uint8_t *src, uint8_t *dest)
   return dest;
 }
 
-/* special case of memcpy: at most 32 bytes */
+/* Special case of memcpy: at most 32 bytes */
 static void
 flz_smallcopy(uint8_t *dest, const uint8_t *src, uint32_t count)
 {
@@ -329,7 +333,7 @@ flz_smallcopy(uint8_t *dest, const uint8_t *src, uint32_t count)
         uint64_t *       q  = (uint64_t *)dest;
         while (count > 8)
           {
-            *q++   = *p++;
+            *q++    = *p++;
             count  -= 8;
             dest   += 8;
             src    += 8;
@@ -345,7 +349,7 @@ flz_finalize(uint32_t runs, const uint8_t *src, uint8_t *dest)
 {
   while (runs >= MAX_COPY)
     {
-      *dest++  = MAX_COPY - 1;
+      *dest++   = MAX_COPY - 1;
       flz_smallcopy(dest, src, MAX_COPY);
       src      += MAX_COPY;
       dest     += MAX_COPY;
@@ -353,7 +357,7 @@ flz_finalize(uint32_t runs, const uint8_t *src, uint8_t *dest)
     }
   if (runs > 0)
     {
-      *dest++  = runs - 1;
+      *dest++   = runs - 1;
       flz_smallcopy(dest, src, runs);
       dest     += runs;
     }
@@ -369,9 +373,9 @@ flz1_match(uint32_t len, uint32_t distance, uint8_t *op)
     {
       while (len > MAX_LEN - 2)
         {
-          *op++  = ( 7 << 5 ) + ( distance >> 8 );
-          *op++  = MAX_LEN - 2 - 7 - 2;
-          *op++  = ( distance & 255 );
+          *op++   = ( 7 << 5 ) + ( distance >> 8 );
+          *op++   = MAX_LEN - 2 - 7 - 2;
+          *op++   = ( distance & 255 );
           len    -= MAX_LEN - 2;
         }
     }
@@ -403,24 +407,24 @@ fastlz1_compress(const void *input, int length, void *output)
   uint32_t        htab[HASH_SIZE];
   uint32_t        seq, hash;
 
-  /* initializes hash table */
+  /* Initializes hash table */
   for (hash = 0; hash < HASH_SIZE; ++hash)
     {
       htab[hash] = 0;
     }
 
-  /* we start with literal copy */
+  /* We start with literal copy */
   const uint8_t *anchor = ip;
 
   ip += 2;
 
-  /* main loop */
+  /* Main loop */
   while (FASTLZ_LIKELY(ip < ip_limit))
     {
       const uint8_t * ref;
       uint32_t        distance, cmp;
 
-      /* find potential match */
+      /* Find potential match */
       do
         {
           seq         = flz_readu32(ip) & 0xffffff;
@@ -429,8 +433,8 @@ fastlz1_compress(const void *input, int length, void *output)
           htab[hash]  = ip - ip_start;
           distance    = ip - ref;
           cmp         = FASTLZ_LIKELY(distance < MAX_L1_DISTANCE)
-                    ? flz_readu32(ref) & 0xffffff
-                    : 0x1000000;
+                            ? flz_readu32(ref) & 0xffffff
+                            : 0x1000000;
           if (FASTLZ_UNLIKELY(ip >= ip_limit))
             {
               break;
@@ -455,16 +459,16 @@ fastlz1_compress(const void *input, int length, void *output)
       uint32_t len = flz_cmp(ref + 3, ip + 3, ip_bound);
       op = flz1_match(len, distance, op);
 
-      /* update the hash at match boundary */
-      ip          += len;
-      seq         = flz_readu32(ip);
-      hash        = flz_hash(seq & 0xffffff);
-      htab[hash]  = ip++ - ip_start;
+      /* Update the hash at match boundary */
+      ip           += len;
+      seq           = flz_readu32(ip);
+      hash          = flz_hash(seq & 0xffffff);
+      htab[hash]    = ip++ - ip_start;
       seq         >>= 8;
-      hash        = flz_hash(seq);
-      htab[hash]  = ip++ - ip_start;
+      hash          = flz_hash(seq);
+      htab[hash]    = ip++ - ip_start;
 
-      anchor      = ip;
+      anchor        = ip;
     }
 
   uint32_t copy = (uint8_t *)input + length - anchor;
@@ -550,19 +554,19 @@ flz2_match(uint32_t len, uint32_t distance, uint8_t *op)
     }
   else
     {
-      /* far away, but not yet in the another galaxy... */
+      /* Far away, but not yet in the another galaxy... */
       if (len < 7)
         {
           distance  -= MAX_L2_DISTANCE;
-          *op++     = ( len << 5 ) + 31;
-          *op++     = 255;
-          *op++     = distance >> 8;
-          *op++     = distance & 255;
+          *op++      = ( len << 5 ) + 31;
+          *op++      = 255;
+          *op++      = distance >> 8;
+          *op++      = distance & 255;
         }
       else
         {
           distance  -= MAX_L2_DISTANCE;
-          *op++     = ( 7 << 5 ) + 31;
+          *op++      = ( 7 << 5 ) + 31;
           for (len -= 7; len >= 255; len -= 255)
             {
               *op++ = 255;
@@ -590,24 +594,24 @@ fastlz2_compress(const void *input, int length, void *output)
   uint32_t        htab[HASH_SIZE];
   uint32_t        seq, hash;
 
-  /* initializes hash table */
+  /* Initializes hash table */
   for (hash = 0; hash < HASH_SIZE; ++hash)
     {
       htab[hash] = 0;
     }
 
-  /* we start with literal copy */
+  /* We start with literal copy */
   const uint8_t *anchor = ip;
 
   ip += 2;
 
-  /* main loop */
+  /* Main loop */
   while (FASTLZ_LIKELY(ip < ip_limit))
     {
       const uint8_t * ref;
       uint32_t        distance, cmp;
 
-      /* find potential match */
+      /* Find potential match */
       do
         {
           seq         = flz_readu32(ip) & 0xffffff;
@@ -616,8 +620,8 @@ fastlz2_compress(const void *input, int length, void *output)
           htab[hash]  = ip - ip_start;
           distance    = ip - ref;
           cmp         = FASTLZ_LIKELY(distance < MAX_FARDISTANCE)
-                    ? flz_readu32(ref) & 0xffffff
-                    : 0x1000000;
+                            ? flz_readu32(ref) & 0xffffff
+                            : 0x1000000;
           if (FASTLZ_UNLIKELY(ip >= ip_limit))
             {
               break;
@@ -634,7 +638,7 @@ fastlz2_compress(const void *input, int length, void *output)
 
       --ip;
 
-      /* far, needs at least 5-byte match */
+      /* Far, needs at least 5-byte match */
       if (distance >= MAX_L2_DISTANCE)
         {
           if (ref[3] != ip[3] || ref[4] != ip[4])
@@ -652,23 +656,23 @@ fastlz2_compress(const void *input, int length, void *output)
       uint32_t len = flz_cmp(ref + 3, ip + 3, ip_bound);
       op = flz2_match(len, distance, op);
 
-      /* update the hash at match boundary */
-      ip          += len;
-      seq         = flz_readu32(ip);
-      hash        = flz_hash(seq & 0xffffff);
-      htab[hash]  = ip++ - ip_start;
+      /* Update the hash at match boundary */
+      ip           += len;
+      seq           = flz_readu32(ip);
+      hash          = flz_hash(seq & 0xffffff);
+      htab[hash]    = ip++ - ip_start;
       seq         >>= 8;
-      hash        = flz_hash(seq);
-      htab[hash]  = ip++ - ip_start;
+      hash          = flz_hash(seq);
+      htab[hash]    = ip++ - ip_start;
 
-      anchor      = ip;
+      anchor        = ip;
     }
 
   uint32_t copy = (uint8_t *)input + length - anchor;
 
   op = flz_finalize(copy, anchor, op);
 
-  /* marker for fastlz2 */
+  /* Marker for fastlz2 */
   *(uint8_t *)output |= ( 1 << 5 );
 
   return op - (uint8_t *)output;
@@ -698,13 +702,13 @@ fastlz2_decompress(const void *input, int length, void *output, int maxout)
               do
                 {
                   FASTLZ_BOUND_CHECK_CORRUPT(ip <= ip_bound);
-                  code  = *ip++;
+                  code   = *ip++;
                   len   += code;
                 }
               while (code == 255);
             }
 
-          code  = *ip++;
+          code   = *ip++;
           ref   -= code;
           len   += 3;
 
@@ -714,9 +718,9 @@ fastlz2_decompress(const void *input, int length, void *output, int maxout)
               if (FASTLZ_LIKELY(ofs == ( 31 << 8 )))
                 {
                   FASTLZ_BOUND_CHECK_CORRUPT(ip < ip_bound);
-                  ofs  = ( *ip++ ) << 8;
+                  ofs   = ( *ip++ ) << 8;
                   ofs  += *ip++;
-                  ref  = op - ofs - MAX_L2_DISTANCE - 1;
+                  ref   = op - ofs - MAX_L2_DISTANCE - 1;
                 }
             }
 
@@ -749,7 +753,7 @@ fastlz2_decompress(const void *input, int length, void *output, int maxout)
 int
 fastlz_decompress(const void *input, int length, void *output, int maxout)
 {
-  /* magic identifier for compression level */
+  /* Magic identifier for compression level */
   int level = (( *(const uint8_t *)input ) >> 5 ) + 1;
 
   if (level == 1)
@@ -762,7 +766,7 @@ fastlz_decompress(const void *input, int length, void *output, int maxout)
       return fastlz2_decompress(input, length, output, maxout);
     }
 
-  /* unknown level, trigger error */
+  /* Unknown level, trigger error */
   return FASTLZ_ERROR_UNKNOWN_LEVEL;
 }
 

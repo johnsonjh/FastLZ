@@ -1,24 +1,27 @@
 /*
  * 6PACK - file compressor using FastLZ (lightning-fast compression library)
- * Copyright (C) 2007-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Copyright (c) 2007-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
+ * Copyright (c) 2023 Jeffrey H. Johnson <trnsz@pobox.com>
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ *  * The above copyright notice and this permission notice shall be
+ *    included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  */
 
 #include <stdio.h>
@@ -32,14 +35,14 @@
 
 #include "fastlz.h"
 
-/* magic identifier for 6pack file */
+/* Magic identifier for 6pack file */
 static unsigned char sixpack_magic[8] = {
   137, '6', 'P', 'K', 13, 10, 26, 10
 };
 
 #define BLOCK_SIZE  65536
 
-/* prototypes */
+/* Prototypes */
 static unsigned long update_adler32(unsigned long checksum, const void *buf,
                                     int len);
 void usage(void);
@@ -50,7 +53,7 @@ void read_chunk_header(FILE *f, int *id, int *options, unsigned long *size,
                        unsigned long *checksum, unsigned long *extra);
 int unpack_file(const char *archive_file);
 
-/* for Adler-32 checksum algorithm, see RFC 1950 Section 8.2 */
+/* Adler-32 checksum algorithm; see RFC-1950, Section 8.2 */
 #define ADLER32_BASE  65521
 static unsigned long
 update_adler32(unsigned long checksum, const void *buf, int len)
@@ -106,14 +109,17 @@ usage(void)
   printf("\n");
 }
 
-/* return non-zero if magic sequence is detected */
-/* warning: reset the read pointer to the beginning of the file */
+/*
+ * Return non-zero if magic sequence is detected.
+ * Warning: Reset the read pointer to the beginning of the file
+ */
+
 int
 detect_magic(FILE *f)
 {
   unsigned char  buffer[8];
   size_t         bytes_read;
-  int            c;
+  unsigned int   c;
 
   fseek(f, SEEK_SET, 0);
   bytes_read = fread(buffer, 1, 8, f);
@@ -154,10 +160,10 @@ read_chunk_header(FILE *f, int *id, int *options, unsigned long *size,
 
   fread(buffer, 1, 16, f);
 
-  *id        = readU16(buffer) & 0xffff;
-  *options   = readU16(buffer + 2) & 0xffff;
-  *size      = readU32(buffer + 4) & 0xffffffff;
-  *checksum  = readU32(buffer + 8) & 0xffffffff;
+  *id        = readU16(buffer)      & 0xffff;
+  *options   = readU16(buffer + 2)  & 0xffff;
+  *size      = readU32(buffer + 4)  & 0xffffffff;
+  *checksum  = readU32(buffer + 8)  & 0xffffffff;
   *extra     = readU32(buffer + 12) & 0xffffffff;
 }
 
@@ -188,7 +194,7 @@ unpack_file(const char *input_file)
   unsigned long   compressed_bufsize;
   unsigned long   decompressed_bufsize;
 
-  /* sanity check */
+  /* Sanity check */
   in = fopen(input_file, "rb");
   if (!in)
     {
@@ -196,12 +202,12 @@ unpack_file(const char *input_file)
       return -1;
     }
 
-  /* find size of the file */
+  /* Find size of the file */
   fseek(in, 0, SEEK_END);
   fsize = ftell(in);
   fseek(in, 0, SEEK_SET);
 
-  /* not a 6pack archive? */
+  /* Not a 6pack archive? */
   if (!detect_magic(in))
     {
       fclose(in);
@@ -211,10 +217,10 @@ unpack_file(const char *input_file)
 
   printf("Archive: %s", input_file);
 
-  /* position of first chunk */
+  /* Position of first chunk */
   fseek(in, 8, SEEK_SET);
 
-  /* initialize */
+  /* Initialize */
   output_file           = 0;
   f                     = 0;
   total_extracted       = 0;
@@ -225,10 +231,10 @@ unpack_file(const char *input_file)
   compressed_bufsize    = 0;
   decompressed_bufsize  = 0;
 
-  /* main loop */
+  /* Main loop */
   for (;;)
     {
-      /* end of file? */
+      /* End of file? */
       size_t pos = ftell(in);
       if (pos >= fsize)
         {
@@ -245,7 +251,7 @@ unpack_file(const char *input_file)
 
       if (( chunk_id == 1 ) && ( chunk_size > 10 ) && ( chunk_size < BLOCK_SIZE ))
         {
-          /* close current file, if any */
+          /* Close current file, if any */
           printf("\n");
           free(output_file);
           output_file = 0;
@@ -254,7 +260,7 @@ unpack_file(const char *input_file)
               fclose(f);
             }
 
-          /* file entry */
+          /* File entry */
           fread(buffer, 1, chunk_size, in);
           checksum = update_adler32(1L, buffer, chunk_size);
           if (checksum != chunk_checksum)
@@ -271,7 +277,7 @@ unpack_file(const char *input_file)
           total_extracted    = 0;
           percent            = 0;
 
-          /* get file to extract */
+          /* Get file to extract */
           name_length = (int)readU16(buffer + 8);
           if (name_length > (int)chunk_size - 10)
             {
@@ -285,7 +291,7 @@ unpack_file(const char *input_file)
               output_file[c] = buffer[10 + c];
             }
 
-          /* check if already exists */
+          /* Check if already exists */
           f = fopen(output_file, "rb");
           if (f)
             {
@@ -297,7 +303,7 @@ unpack_file(const char *input_file)
             }
           else
             {
-              /* create the file */
+              /* Create the file */
               f = fopen(output_file, "wb");
               if (!f)
                 {
@@ -308,7 +314,7 @@ unpack_file(const char *input_file)
                 }
               else
                 {
-                  /* for progress status */
+                  /* For progress status */
                   printf("\n");
                   memset(progress, ' ', 20);
                   if (strlen(output_file) < 16)
@@ -348,12 +354,12 @@ unpack_file(const char *input_file)
         {
           unsigned long remaining;
 
-          /* uncompressed */
+          /* Uncompressed */
           switch (chunk_options)
             {
-            /* stored, simply copy to output */
+            /* Stored, simply copy to output */
             case 0:
-              /* read one block at at time, write and update checksum */
+              /* Read one block at at time, write and update checksum */
               total_extracted  += chunk_size;
               remaining        = chunk_size;
               checksum         = 1L;
@@ -372,7 +378,7 @@ unpack_file(const char *input_file)
                   remaining  -= bytes_read;
                 }
 
-              /* verify everything is written correctly */
+              /* Verify everything is written correctly */
               if (checksum != chunk_checksum)
                 {
                   fclose(f);
@@ -388,9 +394,9 @@ unpack_file(const char *input_file)
 
               break;
 
-            /* compressed using FastLZ */
+            /* Compressed using FastLZ */
             case 1:
-              /* enlarge input buffer if necessary */
+              /* Enlarge input buffer if necessary */
               if (chunk_size > compressed_bufsize)
                 {
                   compressed_bufsize = chunk_size;
@@ -399,7 +405,7 @@ unpack_file(const char *input_file)
                     = (unsigned char *)malloc(compressed_bufsize);
                 }
 
-              /* enlarge output buffer if necessary */
+              /* Enlarge output buffer if necessary */
               if (chunk_extra > decompressed_bufsize)
                 {
                   decompressed_bufsize = chunk_extra;
@@ -408,12 +414,12 @@ unpack_file(const char *input_file)
                     = (unsigned char *)malloc(decompressed_bufsize);
                 }
 
-              /* read and check checksum */
+              /* Read and check checksum */
               fread(compressed_buffer, 1, chunk_size, in);
               checksum         = update_adler32(1L, compressed_buffer, chunk_size);
               total_extracted  += chunk_extra;
 
-              /* verify that the chunk data is correct */
+              /* Verify that the chunk data is correct */
               if (checksum != chunk_checksum)
                 {
                   fclose(f);
@@ -428,7 +434,7 @@ unpack_file(const char *input_file)
                 }
               else
                 {
-                  /* decompress and verify */
+                  /* Decompress and verify */
                   remaining
                     = fastlz_decompress(
                         compressed_buffer,
@@ -462,7 +468,7 @@ unpack_file(const char *input_file)
               break;
             }
 
-          /* for progress, if everything is fine */
+          /* For progress, if everything is fine */
           if (f)
             {
               int last_percent = (int)percent;
@@ -485,18 +491,18 @@ unpack_file(const char *input_file)
             }
         }
 
-      /* position of next chunk */
+      /* Position of next chunk */
       fseek(in, pos + 16 + chunk_size, SEEK_SET);
     }
 
   printf("\n\n");
 
-  /* free allocated stuff */
+  /* Free allocated stuff */
   free(compressed_buffer);
   free(decompressed_buffer);
   free(output_file);
 
-  /* close working files */
+  /* Close working files */
   if (f)
     {
       fclose(f);
@@ -504,7 +510,7 @@ unpack_file(const char *input_file)
 
   fclose(in);
 
-  /* so far so good */
+  /* So far so good */
   return 0;
 }
 
@@ -514,14 +520,14 @@ main(int argc, char **argv)
   int          i;
   const char * archive_file;
 
-  /* show help with no argument at all*/
+  /* Show help with no argument at all */
   if (argc == 1)
     {
       usage();
       return 0;
     }
 
-  /* check for help on usage */
+  /* Check for help on usage */
   for (i = 1; i <= argc; i++)
     {
       if (argv[i])
@@ -534,7 +540,7 @@ main(int argc, char **argv)
         }
     }
 
-  /* check for version information */
+  /* Check for version information */
   for (i = 1; i <= argc; i++)
     {
       if (argv[i])
@@ -553,7 +559,7 @@ main(int argc, char **argv)
         }
     }
 
-  /* needs at least two arguments */
+  /* Needs at least two arguments */
   if (argc <= 1)
     {
       usage();
