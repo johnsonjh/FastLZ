@@ -1,4 +1,4 @@
-CFLAGS?=-Wall -std=c90
+CFLAGS?=-Wall -std=c90 -Wextra -Wpedantic -Ofast -flto=auto -Wno-declaration-after-statement
 
 all: 6pack 6unpack
 
