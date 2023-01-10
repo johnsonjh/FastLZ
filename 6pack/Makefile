@@ -1,4 +1,8 @@
-CFLAGS?=-Wall -std=c90 -Wextra -Wpedantic -Ofast -flto=auto -Wno-declaration-after-statement
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2005-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
+# Copyright (c) 2023 Jeffrey H. Johnson <trnsz@pobox.com>
+
+CFLAGS ?= -Wall -std=c90 -Wextra -Wpedantic -Ofast -flto=auto -Wno-declaration-after-statement
 
 all: 6pack 6unpack
 
