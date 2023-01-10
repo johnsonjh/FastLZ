@@ -1,6 +1,3 @@
-#pragma clang diagnostic push
-// On Windows builds some macros resolve to empty statements
-#pragma ide diagnostic ignored "EmptyDeclOrStmt"
 /*
   FastLZ - Byte-aligned LZ77 compression library
   Copyright (C) 2005-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
@@ -99,7 +96,7 @@ static void fastlz_memmove(uint8_t* dest, const uint8_t* src, uint32_t count) {
           *dest++ = *src++;
         } while (--count);
         break;
-      case 3: // NOLINT(bugprone-branch-clone)
+      case 3: /* NOLINT(bugprone-branch-clone) */
         *dest++ = *src++;
       case 2:
         *dest++ = *src++;
@@ -560,5 +557,3 @@ int fastlz_compress_level(int level, const void* input, int length, void* output
 
   return FASTLZ_ERROR_UNKNOWN_LEVEL;
 }
-
-#pragma clang diagnostic pop
