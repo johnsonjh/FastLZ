@@ -1,0 +1,8 @@
+/.idea/
+/cmake-build-*/
+*~
+*.o
+*.bak
+examples/6pack
+examples/6unpack
+tests/test_roundtrip
