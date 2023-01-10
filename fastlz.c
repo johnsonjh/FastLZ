@@ -51,7 +51,7 @@
 /*
  * Specialize custom 64-bit implementation for speed improvements.
  */
-#if defined(__x86_64__) || defined(_M_X64)
+#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
 #define FLZ_ARCH64
 #endif
 
@@ -124,11 +124,11 @@ static uint64_t flz_readu64(const void* ptr) { return *(const uint64_t*)ptr; }
 static uint32_t flz_cmp(const uint8_t* p, const uint8_t* q, const uint8_t* r) {
   const uint8_t* start = p;
 
-  if (flz_readu64(p) == flz_readu64(q)) {
+  if (flz_readu64(p) == flz_readu64(q) && q + 8 < r) {
     p += 8;
     q += 8;
   }
-  if (flz_readu32(p) == flz_readu32(q)) {
+  if (flz_readu32(p) == flz_readu32(q) && q + 4 < r) {
     p += 4;
     q += 4;
   }
