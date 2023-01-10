@@ -35,6 +35,17 @@
 #define SIXPACK_VERSION_REVISION   0
 #define SIXPACK_VERSION_STRING     "0.1.0"
 
+#undef FREE
+#ifdef TESTING
+# define FREE(p) free(p)
+#else
+# define FREE(p) do  \
+  {                  \
+    free((p));       \
+    (p) = NULL;      \
+  } while(0)
+#endif /* ifdef TESTING */
+
 #include "fastlz.h"
 
 /* Magic identifier for 6pack file */
@@ -42,7 +53,17 @@ static unsigned char sixpack_magic[8] = {
   137, '6', 'P', 'K', 13, 10, 26, 10
 };
 
-#define BLOCK_SIZE  65536
+#ifndef BLOCK_SIZE
+# define BLOCK_SIZE  65536
+#endif /* ifndef BLOCK_SIZE */
+
+#if ( BLOCK_SIZE > 2621440 )
+# error BLOCK_SIZE too large ( > 2621440 )
+#endif /* if ( BLOCK_SIZE > 2621440 */
+
+#if ( BLOCK_SIZE < 256 )
+# error BLOCK_SIZE too small ( < 256 )
+#endif /* if ( BLOCK_SIZE < 256 */
 
 /* Prototypes */
 static unsigned long update_adler32(unsigned long checksum, const void *buf,
@@ -255,8 +276,9 @@ unpack_file(const char *input_file)
         {
           /* Close current file, if any */
           printf("\n");
-          free(output_file);
-          output_file = 0;
+          if (output_file)
+            FREE(output_file);
+
           if (f)
             {
               fclose(f);
@@ -267,8 +289,6 @@ unpack_file(const char *input_file)
           checksum = update_adler32(1L, buffer, chunk_size);
           if (checksum != chunk_checksum)
             {
-              free(output_file);
-              output_file = 0;
               fclose(in);
               printf("\nError: checksum mismatch!\n");
               printf("Got %08lX Expecting %08lX\n", checksum, chunk_checksum);
@@ -287,6 +307,12 @@ unpack_file(const char *input_file)
             }
 
           output_file = (char *)malloc(name_length + 1);
+          if (!output_file)
+            {
+              printf("Out of memory. Aborting!\n");
+              abort();
+            }
+
           memset(output_file, 0, name_length + 1);
           for (c = 0; c < name_length; c++)
             {
@@ -299,9 +325,8 @@ unpack_file(const char *input_file)
             {
               fclose(f);
               printf("File %s already exists. Skipped.\n", output_file);
-              free(output_file);
-              output_file  = 0;
-              f            = 0;
+              FREE(output_file);
+              f = 0;
             }
           else
             {
@@ -310,9 +335,7 @@ unpack_file(const char *input_file)
               if (!f)
                 {
                   printf("Can't create file %s. Skipped.\n", output_file);
-                  free(output_file);
-                  output_file  = 0;
-                  f            = 0;
+                  FREE(output_file);
                 }
               else
                 {
@@ -384,9 +407,8 @@ unpack_file(const char *input_file)
               if (checksum != chunk_checksum)
                 {
                   fclose(f);
-                  f            = 0;
-                  free(output_file);
-                  output_file  = 0;
+                  f = 0;
+                  FREE(output_file);
                   printf("\nError: checksum mismatch. Aborted.\n");
                   printf(
                     "Got %08lX Expecting %08lX\n",
@@ -402,7 +424,8 @@ unpack_file(const char *input_file)
               if (chunk_size > compressed_bufsize)
                 {
                   compressed_bufsize = chunk_size;
-                  free(compressed_buffer);
+                  if (compressed_buffer)
+                    FREE(compressed_buffer);
                   compressed_buffer
                     = (unsigned char *)malloc(compressed_bufsize);
                 }
@@ -411,9 +434,17 @@ unpack_file(const char *input_file)
               if (chunk_extra > decompressed_bufsize)
                 {
                   decompressed_bufsize = chunk_extra;
-                  free(decompressed_buffer);
+                  if (decompressed_buffer)
+                    FREE(decompressed_buffer);
                   decompressed_buffer
                     = (unsigned char *)malloc(decompressed_bufsize);
+                }
+
+              /* Check compressed_buffer */
+              if (!compressed_buffer)
+                {
+                  printf("\nError: No compressed buffer! Aborting!\n");
+                  abort();
                 }
 
               /* Read and check checksum */
@@ -425,9 +456,8 @@ unpack_file(const char *input_file)
               if (checksum != chunk_checksum)
                 {
                   fclose(f);
-                  f            = 0;
-                  free(output_file);
-                  output_file  = 0;
+                  f = 0;
+                  FREE(output_file);
                   printf("\nError: checksum mismatch. Skipped.\n");
                   printf(
                     "Got %08lX Expecting %08lX\n",
@@ -446,13 +476,18 @@ unpack_file(const char *input_file)
                   if (remaining != chunk_extra)
                     {
                       fclose(f);
-                      f            = 0;
-                      free(output_file);
-                      output_file  = 0;
+                      f = 0;
+                      FREE(output_file);
                       printf("\nError: decompression failed. Skipped.\n");
                     }
                   else
                     {
+                      /* Check compressed_buffer */
+                      if (!decompressed_buffer)
+                        {
+                          printf("\nError: No decompressed buffer! Aborting!\n");
+                          abort();
+                        }
                       fwrite(decompressed_buffer, 1, chunk_extra, f);
                     }
                 }
@@ -464,9 +499,8 @@ unpack_file(const char *input_file)
                 "\nError: unknown compression method (%d)\n",
                 chunk_options);
               fclose(f);
-              f            = 0;
-              free(output_file);
-              output_file  = 0;
+              f = 0;
+              FREE(output_file);
               break;
             }
 
@@ -500,9 +534,9 @@ unpack_file(const char *input_file)
   printf("\n\n");
 
   /* Free allocated stuff */
-  free(compressed_buffer);
-  free(decompressed_buffer);
-  free(output_file);
+  FREE(compressed_buffer);
+  FREE(decompressed_buffer);
+  FREE(output_file);
 
   /* Close working files */
   if (f)

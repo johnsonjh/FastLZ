@@ -40,7 +40,7 @@
   && ( FASTLZ_USE_SAFE_DECOMPRESSOR == 0 )
 # undef FASTLZ_SAFE
 #endif /* if defined( FASTLZ_USE_SAFE_DECOMPRESSOR )
-	   && ( FASTLZ_USE_SAFE_DECOMPRESSOR == 0 ) */
+           && ( FASTLZ_USE_SAFE_DECOMPRESSOR == 0 ) */
 
 /*
  * Give hints to the compiler for branch prediction optimization.
@@ -54,17 +54,17 @@
 # define FASTLZ_LIKELY(c)     ( c )
 # define FASTLZ_UNLIKELY(c)   ( c )
 #endif /* if defined( __clang__ )
-	   || ( defined( __GNUC__ ) && ( __GNUC__ > 2 )) */
+           || ( defined( __GNUC__ ) && ( __GNUC__ > 2 )) */
 
 /*
  * Specialize custom 64-bit implementation for speed improvements.
  */
 
-#if defined( __x86_64__ )  || defined( _M_X64 ) \
- || defined( __aarch64__ ) || defined( _M_ARM64 )
+#if defined ( __x86_64__ )  || defined( _M_X64 ) \
+  || defined( __aarch64__ ) || defined( _M_ARM64 )
 # define FLZ_ARCH64
-#endif /* if defined( __x86_64__ ) || defined( _M_X64 )
-	  || defined( __aarch64__ ) || defined( _M_ARM64 ) */
+#endif /* if defined ( __x86_64__ )  || defined( _M_X64 )
+           || defined( __aarch64__ ) || defined( _M_ARM64 ) */
 
 #if defined( FASTLZ_SAFE )
 # define FASTLZ_BOUND_CHECK_OOB(cond) \
@@ -298,7 +298,7 @@
 static uint16_t
 flz_hash(uint32_t v)
 {
-  uint32_t h = ( v * 2654435769LL ) >> ( 32 - HASH_LOG );
+  uint32_t h = ( v * 2654435769L ) >> ( 32 - HASH_LOG );
 
   return h & HASH_MASK;
 }

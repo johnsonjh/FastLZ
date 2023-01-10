@@ -35,6 +35,17 @@
 #define SIXPACK_VERSION_REVISION   0
 #define SIXPACK_VERSION_STRING     "snapshot 20070615"
 
+#undef FREE
+#ifdef TESTING
+# define FREE(p) free(p)
+#else
+# define FREE(p) do  \
+  {                  \
+    free((p));       \
+    (p) = NULL;      \
+  } while(0)
+#endif /* ifdef TESTING */
+
 #include "fastlz.h"
 
 #undef PATH_SEPARATOR
@@ -43,32 +54,42 @@
 # define PATH_SEPARATOR  '\\'
 #endif /* if defined( MSDOS ) || defined( __MSDOS__ ) || defined( MSDOS ) */
 
-#if defined( WIN32 )  || defined( __NT__ ) \
- || defined( _WIN32 ) || defined( __WIN32__ )
+#if defined ( WIN32 )  || defined( __NT__ ) \
+  || defined( _WIN32 ) || defined( __WIN32__ )
 # define PATH_SEPARATOR  '\\'
-#endif /* if defined( WIN32 )  || defined( __NT__ )
-	  || defined( _WIN32 ) || defined( __WIN32__ ) */
+#endif /* if defined ( WIN32 )  || defined( __NT__ )
+           || defined( _WIN32 ) || defined( __WIN32__ ) */
 
 #ifndef PATH_SEPARATOR
 # define PATH_SEPARATOR  '/'
 #endif /* ifndef PATH_SEPARATOR */
 
 #undef SIXPACK_BENCHMARK_WIN32
-#if defined( WIN32 )  || defined( __NT__ ) \
- || defined( _WIN32 ) || defined( __WIN32__ )
+#if defined ( WIN32 )  || defined( __NT__ ) \
+  || defined( _WIN32 ) || defined( __WIN32__ )
 # if defined( _MSC_VER ) || defined( __GNUC__ )
 #  define SIXPACK_BENCHMARK_WIN32
 #  include <windows.h>
 # endif /* if defined( _MSC_VER ) || defined( __GNUC__ ) */
-#endif /* if defined( WIN32 )  || defined( __NT__ )
-	  || defined( _WIN32 ) || defined( __WIN32__ ) */
+#endif /* if defined ( WIN32 )  || defined( __NT__ )
+           || defined( _WIN32 ) || defined( __WIN32__ ) */
 
 /* Magic identifier for 6pack file */
 static unsigned char sixpack_magic[8] = {
   137, '6', 'P', 'K', 13, 10, 26, 10
 };
 
-#define BLOCK_SIZE  ( 2 * 64 * 1024 )
+#ifndef BLOCK_SIZE
+# define BLOCK_SIZE  65535
+#endif /* ifndef BLOCK_SIZE */
+
+#if ( BLOCK_SIZE > 2621440 )
+# error BLOCK_SIZE too large ( > 2621440 )
+#endif /* if ( BLOCK_SIZE > 2621440 */
+
+#if ( BLOCK_SIZE < 256 )
+# error BLOCK_SIZE too small ( < 256 )
+#endif /* if ( BLOCK_SIZE < 256 */
 
 /* Prototypes */
 static unsigned long update_adler32(unsigned long checksum, const void *buf,
@@ -424,6 +445,12 @@ pack_file(int compress_level, const char *input_file, const char *output_file)
   FILE * f;
   int    result;
 
+  if (!output_file)
+    {
+      printf("Error: invalid output file. Aborted.\n\n");
+      return -1;
+    }
+
   f = fopen(output_file, "rb");
   if (f)
     {
@@ -503,8 +530,8 @@ pack_file(int compress_level, const char *input_file, const char *output_file)
     if (!buffer || !result)
       {
         printf("Error: not enough memory!\n");
-        free(buffer);
-        free(result);
+        FREE(buffer);
+        FREE(result);
         fclose(in);
         return -1;
       }
@@ -515,8 +542,8 @@ pack_file(int compress_level, const char *input_file, const char *output_file)
       {
         printf("Error reading file %s!\n", shown_name);
         printf("Read %d bytes, expecting %d bytes\n", bytes_read, fsize);
-        free(buffer);
-        free(result);
+        FREE(buffer);
+        FREE(result);
         fclose(in);
         return -1;
       }

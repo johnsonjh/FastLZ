@@ -12,3 +12,5 @@
 core
 *.core
 test.*
+compile_commands.json
+log.txt
