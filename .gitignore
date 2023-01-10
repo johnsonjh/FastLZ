@@ -2,8 +2,8 @@
 # Copyright (c) 2005-2020 Ariya Hidayat <ariya.hidayat@gmail.com>
 # Copyright (c) 2023 Jeffrey H. Johnson <trnsz@pobox.com>
 
-6pack/
-6unpack
+6pack/6pack
+6pack/6unpack
 /.idea/
 /cmake-build-*/
 *~
