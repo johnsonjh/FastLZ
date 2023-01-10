@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+
 /*
  * 6PACK - file compressor using FastLZ (lightning-fast compression library)
  *

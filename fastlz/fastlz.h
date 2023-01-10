@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+
 /*
  * FastLZ - Byte-aligned LZ77 compression library
  *
